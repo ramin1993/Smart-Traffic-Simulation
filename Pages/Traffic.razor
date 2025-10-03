@@ -1,0 +1,191 @@
+﻿@page "/traffic"
+@using Microsoft.Extensions.DependencyInjection
+@using TrafficSimulation.Models
+@using TrafficSimulation.Services
+@implements IDisposable
+
+<div class="simple-traffic-container">
+    <div class="header">
+        <h1>🚦 İşıqfor Simulyasiyası</h1>
+        <p class="subtitle">4 yol kəsişməsi - Real-time idarəetmə</p>
+    </div>
+
+    <div class="controls">
+        <div class="control-buttons">
+            <button @onclick="StartSimulation" class="btn start">Başlat</button>
+            <button @onclick="StopSimulation" class="btn stop">Dayandır</button>
+            <button @onclick="ResetSimulation" class="btn reset">Sıfırla</button>
+        </div>
+
+        <div class="countdown-panel">
+            <div class="countdown-label">YAŞIL İŞIQ</div>
+            <div class="countdown-timer">@GetRemainingTime() s</div>
+            <div class="active-direction">@GetCurrentGreenDirection()</div>
+        </div>
+    </div>
+
+    <div class="road-map">
+        <div class="road north">
+            <div class="road-lane">
+                <div class="lane-markings"></div>
+                <div class="road-edge"></div>
+                <div class="vehicles">
+                    @for (int i = 0; i < Math.Min(GetTrafficLight(TrafficDirection.North).VehicleCount, 12); i++)
+                    {
+                        <div class="car @(GetTrafficLight(TrafficDirection.North).CurrentColor == LightColor.Green ? "moving" : "waiting")"
+                             style="animation-delay: @(i * 0.3)s;"></div>
+                    }
+                </div>
+            </div>
+            <div class="traffic-control">
+                <div class="traffic-light @GetLightClass(TrafficDirection.North)">
+                    <div class="light red @(GetTrafficLight(TrafficDirection.North).CurrentColor == LightColor.Red ? "active" : "")"></div>
+                    <div class="light yellow"></div>
+                    <div class="light green @(GetTrafficLight(TrafficDirection.North).CurrentColor == LightColor.Green ? "active" : "")"></div>
+                </div>
+                <div class="road-info">
+                    <span class="direction">ŞIMAL</span>
+                    <span class="count">@GetTrafficLight(TrafficDirection.North).VehicleCount</span>
+                    <button @onclick="() => AddVehicle(TrafficDirection.North)" class="add-car">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="road south">
+            <div class="road-lane">
+                <div class="lane-markings"></div>
+                <div class="road-edge"></div>
+                <div class="vehicles">
+                    @for (int i = 0; i < Math.Min(GetTrafficLight(TrafficDirection.South).VehicleCount, 12); i++)
+                    {
+                        <div class="car @(GetTrafficLight(TrafficDirection.South).CurrentColor == LightColor.Green ? "moving" : "waiting")"
+                             style="animation-delay: @(i * 0.3)s;"></div>
+                    }
+                </div>
+            </div>
+            <div class="traffic-control">
+                <div class="traffic-light @GetLightClass(TrafficDirection.South)">
+                    <div class="light red @(GetTrafficLight(TrafficDirection.South).CurrentColor == LightColor.Red ? "active" : "")"></div>
+                    <div class="light yellow"></div>
+                    <div class="light green @(GetTrafficLight(TrafficDirection.South).CurrentColor == LightColor.Green ? "active" : "")"></div>
+                </div>
+                <div class="road-info">
+                    <span class="direction">CƏNUB</span>
+                    <span class="count">@GetTrafficLight(TrafficDirection.South).VehicleCount</span>
+                    <button @onclick="() => AddVehicle(TrafficDirection.South)" class="add-car">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="road east">
+            <div class="road-lane">
+                <div class="lane-markings"></div>
+                <div class="road-edge"></div>
+                <div class="vehicles">
+                    @for (int i = 0; i < Math.Min(GetTrafficLight(TrafficDirection.East).VehicleCount, 12); i++)
+                    {
+                        <div class="car @(GetTrafficLight(TrafficDirection.East).CurrentColor == LightColor.Green ? "moving" : "waiting")"
+                             style="animation-delay: @(i * 0.3)s;"></div>
+                    }
+                </div>
+            </div>
+            <div class="traffic-control">
+                <div class="traffic-light @GetLightClass(TrafficDirection.East)">
+                    <div class="light red @(GetTrafficLight(TrafficDirection.East).CurrentColor == LightColor.Red ? "active" : "")"></div>
+                    <div class="light yellow"></div>
+                    <div class="light green @(GetTrafficLight(TrafficDirection.East).CurrentColor == LightColor.Green ? "active" : "")"></div>
+                </div>
+                <div class="road-info">
+                    <span class="direction">ŞƏRQ</span>
+                    <span class="count">@GetTrafficLight(TrafficDirection.East).VehicleCount</span>
+                    <button @onclick="() => AddVehicle(TrafficDirection.East)" class="add-car">+</button>
+                </div>
+            </div>
+        </div>
+        <div class="road west">
+            <div class="road-lane">
+                <div class="lane-markings"></div>
+                <div class="road-edge"></div>
+                <div class="vehicles">
+                    @for (int i = 0; i < Math.Min(GetTrafficLight(TrafficDirection.West).VehicleCount, 12); i++)
+                    {
+                        <div class="car @(GetTrafficLight(TrafficDirection.West).CurrentColor == LightColor.Green ? "moving" : "waiting")"
+                             style="animation-delay: @(i * 0.3)s;"></div>
+                    }
+                </div>
+            </div>
+            <div class="traffic-control">
+                <div class="traffic-light @GetLightClass(TrafficDirection.West)">
+                    <div class="light red @(GetTrafficLight(TrafficDirection.West).CurrentColor == LightColor.Red ? "active" : "")"></div>
+                    <div class="light yellow"></div>
+                    <div class="light green @(GetTrafficLight(TrafficDirection.West).CurrentColor == LightColor.Green ? "active" : "")"></div>
+                </div>
+                <div class="road-info">
+                    <span class="direction">QƏRB</span>
+                    <span class="count">@GetTrafficLight(TrafficDirection.West).VehicleCount</span>
+                    <button @onclick="() => AddVehicle(TrafficDirection.West)" class="add-car">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="intersection">
+            <div class="zebra-crossing"></div>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="number">@TotalVehicles</div>
+            <div class="label">Ümumi Avtomobil</div>
+        </div>
+        <div class="stat">
+            <div class="number">@GetCurrentGreenDirectionVehicleCount()</div>
+            <div class="label">Aktiv Yolda</div>
+        </div>
+        <div class="stat">
+            <div class="number">@GetMaxWaitingVehicles()</div>
+            <div class="label">Ən Çox Gözləyən</div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Inject]
+    private TrafficSimulationService TrafficService { get; set; }
+
+    private int TotalVehicles => TrafficService.TrafficLights.Values.Sum(x => x.VehicleCount);
+
+    protected override void OnInitialized()
+    {
+        TrafficService.OnStateChanged += OnStateChangedHandler;
+    }
+
+    private void OnStateChangedHandler()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private TrafficDirection GetCurrentGreenDirection() => TrafficService.GetCurrentGreenDirection();
+
+    private int GetCurrentGreenDirectionVehicleCount() =>
+        TrafficService.TrafficLights[TrafficService.GetCurrentGreenDirection()].VehicleCount;
+
+    private int GetMaxWaitingVehicles() =>
+        TrafficService.TrafficLights.Values
+            .Where(x => x.CurrentColor == LightColor.Red)
+            .Max(x => x.VehicleCount);
+
+    private void StartSimulation() => TrafficService.StartSimulation();
+    private void StopSimulation() => TrafficService.StopSimulation();
+    private void ResetSimulation() => TrafficService.ResetSimulation();
+    private void AddVehicle(TrafficDirection direction) => TrafficService.AddVehicle(direction);
+    private TrafficLight GetTrafficLight(TrafficDirection direction) => TrafficService.TrafficLights[direction];
+    private string GetLightClass(TrafficDirection direction) => GetTrafficLight(direction).CurrentColor.ToString().ToLower();
+    private int GetRemainingTime() => TrafficService.TrafficLights[TrafficService.GetCurrentGreenDirection()].GreenLightDuration;
+
+    public void Dispose()
+    {
+        TrafficService.OnStateChanged -= OnStateChangedHandler;
+        TrafficService?.Dispose();
+    }
+}
